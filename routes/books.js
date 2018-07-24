@@ -4,21 +4,31 @@ const Book = require("../models/book");
 const mongoose = require("mongoose");
 
 /* GET books listing. */
-router.get("/", async (req, res, next) => {
-  try {
+const tryWrapper = asyncMiddleware => {
+  return async (req, res, next) => {
+    try {
+      await asyncMiddleware(req, res, next);
+    } catch (err) {
+      next(err);
+    }
+  };
+};
+
+router.get(
+  "/",
+  tryWrapper(async (req, res, next) => {
     const books = await Book.find().populate("author");
     res.json(books);
-  } catch (error) {
-    next(error);
-  }
-});
+  })
+);
 
 router.get("/:id", (req, res, next) => {
   res.json({ message: `get book with id ${req.params.id}` });
 });
 
-router.post("/", async (req, res, next) => {
-  try {
+router.post(
+  "/",
+  tryWrapper(async (req, res, next) => {
     const newBook = new Book({
       title: req.body.title,
       author: req.body.author
@@ -27,17 +37,22 @@ router.post("/", async (req, res, next) => {
     await newBook.save();
 
     res.status(201).json({ message: `created a new book successfully` });
-  } catch (error) {
-    next(error);
+  })
+);
+
+router.put(
+  "/:id",
+  tryWrapper(async (req, res, next) => {
+    res.json({ message: `update book with id ${req.params.id}` });
+  })
+);
+
+router.delete("/:id", async (req, res, next) => {
+  try {
+    res.json({ message: `delete book with id ${req.params.id}` });
+  } catch (err) {
+    next(err);
   }
-});
-
-router.put("/:id", (req, res, next) => {
-  res.json({ message: `update book with id ${req.params.id}` });
-});
-
-router.delete("/:id", (req, res, next) => {
-  res.json({ message: `delete book with id ${req.params.id}` });
 });
 
 module.exports = router;
